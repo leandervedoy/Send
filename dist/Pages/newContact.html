@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Contact</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+   <!-- Navbar -->
+   <div id="navbar-container"></div>
+   
+  <div class="messages-container">
+  <div id="contacts-container"></div>
+  <div class="contacts-container">
+  <div class="header">All users</div>
+  <div class="search-box">
+    <input id="searchInput" type="text" placeholder="Search through all users" />  
+  </div>
+    <ul id="myContactsList" class="contacts-list"></ul>
+  </div>
+
+  </div>
+
+</body>
+
+
+<script>
+   const userID = localStorage.getItem('userID');
+    console.log(userID);
+    
+    if(userID == null || userID == 'undefined'){
+       alert('You have been logged out.');
+       window.location.href = '/Pages/login.html';
+    }
+
+
+    // Load and insert navbar
+    fetch('/Components/navbar.html')
+      .then(response => response.text())
+        .then(html => {
+          document.getElementById('navbar-container').innerHTML = html;
+
+          // Run after navbar is loaded
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+
+          const messageLink = document.getElementById('message-link');
+          if (messageLink) {
+            messageLink.addEventListener('click', function (e) {
+              if (!token) {
+                e.preventDefault();
+                alert('Please log in to access messages.');
+                window.location.href = '/login.html';
+              } else {
+                window.location.href = '/message.html';
+              }
+            });
+          }
+
+          const logoutLink = document.getElementById('logout-link');
+          if (logoutLink) {
+            logoutLink.addEventListener('click', function (e) {
+              e.preventDefault();
+              localStorage.removeItem('authToken');
+              sessionStorage.removeItem('authToken');
+              alert('You have been logged out.');
+              window.location.href = '/index.html';
+            });
+
+            if (!token) {
+              logoutLink.style.display = 'none';
+            }
+          }
+     });
+
+
+ // Load and insert contacts component
+fetch('/Components/Contacts.html')
+  .then(res => res.text())
+  .then(html => {
+    document.getElementById('contacts-container').innerHTML = html;
+
+    const addBtn = document.getElementById('addContactBtn');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        window.location.href = '/Pages/newContact.html';
+      });
+    }
+
+    const contactsList = document.getElementById('contactsList'); 
+    const myContactsList = document.getElementById('myContactsList'); 
+    const searchInput = document.getElementById('searchInput');
+
+    fetch(`http://localhost:3000/api/MyContacts?userID=${userID}`)
+      .then(res => res.json())
+      .then(myContacts => {
+        function renderMyContacts(list) {
+          contactsList.innerHTML = '';
+
+          searchInput.addEventListener('input', () => {
+            const filter = searchInput.value.toLowerCase();
+            const filtered = myContacts.filter(c =>
+              c.Username.toLowerCase().includes(filter)
+            );
+            renderMyContacts(filtered);
+          });
+
+          if (!list.length) {
+            contactsList.innerHTML = '<li style="padding:20px; text-align:center; color:#999;">No contacts</li>';
+            return;
+          }
+
+          list.forEach(contact => {
+            const li = document.createElement('li');
+            li.setAttribute('data-userid', contact.UserID);
+            li.classList.add('contact');
+            li.innerHTML = `
+              <img src="https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" alt="${contact.Username}" />
+              <div class="contact-info">
+                <div class="contact-name">${contact.Username}</div>
+              </div>
+              <div class="time">---</div>
+            `;
+            contactsList.appendChild(li);
+
+           li.addEventListener('click', () => {
+  const otherID = contact.UserID;
+  const userA = localStorage.getItem('userID');
+
+  if (!confirm(`Are you sure you want to remove ${contact.Username} from your contacts?`)) {
+    return;
+  }
+
+  fetch('http://localhost:3000/api/MyContacts', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      userID: userA,
+      contactID: otherID
+    })
+  })
+  .then(res => {
+    if (res.ok) {
+      alert(`${contact.Username} has been removed from your contacts.`);
+    location.reload();
+    } else {
+      alert('Failed to remove contact.');
+    }
+  })
+  .catch(err => {
+    console.error('Error removing contact:', err);
+    alert('An error occurred while removing the contact.');
+  });
+});
+
+          });
+        }
+
+        renderMyContacts(myContacts);
+
+      })
+      .catch(error => {
+        console.error('Error fetching my contacts:', error);
+        contactsList.innerHTML = '<li style="padding:20px; text-align:center; color:#999;">Failed to load contacts</li>';
+      });
+
+fetch(`http://localhost:3000/api/SentUsers?exclude=${userID}`)
+  .then(res => res.json())
+  .then(sentUsers => {
+    if (!sentUsers.length) {
+      myContactsList.innerHTML = '<li style="padding:20px; text-align:center; color:#999;">No contacts</li>';
+    } else {
+      sentUsers.forEach(contact => {
+        const li = document.createElement('li');
+        li.classList.add('contact');
+        li.setAttribute('data-userid', contact.UserID);
+        li.innerHTML = `
+          <img src="https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" alt="${contact.Username}" />
+          <div class="contact-info">
+            <div class="contact-name">${contact.Username}</div>
+          </div>
+          <div class="time">---</div>
+        `;
+        myContactsList.appendChild(li);
+
+        li.addEventListener('click', () => {
+          const confirmAdd = confirm(`Are you sure you want to add ${contact.Username} as a contact?`);
+          if (!confirmAdd) return;
+
+          fetch('http://localhost:3000/api/MyContacts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userID: userID,
+              contactID: contact.UserID
+            })
+          })
+          .then(res => {
+            if (res.ok) {
+              alert(`${contact.Username} has been added to your contacts.`);
+              location.reload();
+            } else {
+              alert('Failed to add contact.');
+            }
+          })
+          .catch(err => {
+            console.error('Error adding contact:', err);
+            alert('An error occurred while adding the contact.');
+          });
+        });
+      });
+    }
+  })
+  .catch(err => {
+    console.error('Failed to load sent users:', err);
+  });
+
+  });
+
+
+</script>

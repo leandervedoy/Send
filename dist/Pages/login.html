@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - SEND</title>
+  <style>
+    /* Simple styles for the login page */
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+    .login-container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+    .login-container h2 {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .input-field {
+      width: 90%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      align-self: center;
+    }
+    .input-field[type="checkbox"] {
+      width: auto;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .login-btn:hover {
+      background-color: #45a049;
+    }
+    .error {
+      color: red;
+      font-size: 14px;
+      text-align: center;
+    }
+    .inputPart{
+      justify-items: center;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 10px;
+    }
+    .styleRememberMe{
+      padding-bottom: 10px;
+      font-size: smaller;
+    }
+    .registerTxt{
+      font-size: small;
+      color: rgb(139, 136, 136);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-container">
+  <h2>Login</h2>
+  <form id="loginForm" class="loginForm">
+    <div class="inputPart">
+     <input type="text" id="username" class="input-field" placeholder="Username" required />
+     <input type="password" id="password" class="input-field" placeholder="Password" required />
+    </div>
+    <div class="styleRememberMe">
+      <input type="checkbox" id="rememberMe" />
+      <label for="rememberMe">Remember Me</label>
+    </div>
+    <button type="submit" class="login-btn">Login</button>
+    <p class="registerTxt" href="#" id="registerNewUser">Register new user</p>
+    <p class="error" id="errorMessage"></p>
+  </form>
+</div>
+
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+
+    const response = await fetch('http://localhost:3000/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, rememberMe }),
+    });
+
+    const result = await response.json();
+    
+    if (response.ok) {
+      const token = result.token;
+      const userID = result.userID;
+
+      localStorage.setItem('userID', userID); 
+
+      if (rememberMe) {
+       localStorage.setItem('authToken', token); 
+
+      } else {
+         sessionStorage.setItem('authToken', token); 
+      }
+
+      window.location.href = '/Pages/message.html';
+
+    } else {
+      document.getElementById('errorMessage').textContent = result.message;
+    }
+  });
+
+   document.getElementById('registerNewUser')?.addEventListener('click', function (e) {  
+      window.location.href = '/Pages/register.html';
+    });
+</script>
+
+</body>
+</html>

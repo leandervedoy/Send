@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us - SEND</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+   <!-- Navbar -->
+   <div id="navbar-container"></div>
+   
+  <div class="messages-container">
+  <div id="contacts-container"></div>
+  <div class="chat-container">
+    <div class="chat-header"></div>
+    <div class="messages">
+      <p style="text-align: center; ">No messages here yet.</p>
+    </div>
+    <div class="chat-input">
+        <input type="text" placeholder="Type a message..." id="messageInput">
+        <button onclick="sendMessage()" class="sendmessage-button">➤</button>
+    </div>
+</div>
+</div>
+
+
+<script>
+  
+    // Load and insert navbar
+    fetch('/Components/navbar.html')
+      .then(response => response.text())
+        .then(html => {
+          document.getElementById('navbar-container').innerHTML = html;
+
+          // Run after navbar is loaded
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+
+          const messageLink = document.getElementById('message-link');
+          if (messageLink) {
+            messageLink.addEventListener('click', function (e) {
+              if (!token) {
+                e.preventDefault();
+                alert('Please log in to access messages.');
+                window.location.href = '/login.html';
+              } else {
+                window.location.href = '/message.html';
+              }
+            });
+          }
+
+          const logoutLink = document.getElementById('logout-link');
+          if (logoutLink) {
+            logoutLink.addEventListener('click', function (e) {
+              e.preventDefault();
+              localStorage.removeItem('authToken');
+              sessionStorage.removeItem('authToken');
+              alert('You have been logged out.');
+              window.location.href = '/index.html';
+            });
+
+            if (!token) {
+              logoutLink.style.display = 'none';
+            }
+          }
+     });
+  
+
+  // Load and insert contacts component
+  fetch('/Components/Contacts.html')
+  .then(res => res.text())
+  .then(html => {
+    document.getElementById('contacts-container').innerHTML = html;
+    
+    const addBtn = document.getElementById('addContactBtn');
+    if(addBtn) {
+      addBtn.addEventListener('click', () => {
+         window.location.href = '/Pages/newContact.html';
+      });
+    }
+ 
+    const contactsList = document.getElementById('contactsList');
+    const searchInput = document.getElementById('searchInput');
+    const userID = localStorage.getItem('userID');
+    console.log(userID);
+    
+    if(userID == null || userID == 'undefined'){
+       alert('You have been logged out.');
+       window.location.href = '/Pages/login.html';
+    }
+
+    // Fetch contacts
+  fetch(`http://localhost:3000/api/MyContacts?userID=${userID}`)
+      .then(res => res.json())
+      .then(myContacts => {
+        function renderMyContacts(list) {
+          contactsList.innerHTML = '';
+
+          searchInput.addEventListener('input', () => {
+            const filter = searchInput.value.toLowerCase();
+            const filtered = myContacts.filter(c =>
+              c.Username.toLowerCase().includes(filter)
+            );
+            renderMyContacts(filtered);
+          });
+
+          if (!list.length) {
+            contactsList.innerHTML = '<li style="padding:20px; text-align:center; color:#999;">No contacts</li>';
+            return;
+          }
+
+          list.forEach(contact => {
+            const li = document.createElement('li');
+            li.setAttribute('data-userid', contact.UserID);
+            li.classList.add('contact');
+            li.innerHTML = `
+              <img src="https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" alt="${contact.Username}" />
+              <div class="contact-info">
+                <div class="contact-name">${contact.Username}</div>
+              </div>
+              <div class="time">---</div>
+            `;
+            contactsList.appendChild(li);
+
+         li.addEventListener('click', async () => {
+              const otherID = contact.UserID;
+
+              // update chat header
+              document.querySelector('.chat-header').textContent = `Chat with ${contact.Username}`;
+
+              const userA = localStorage.getItem('userID');
+              const userB = otherID; 
+              console.log(userA, userB);
+              // 1) get or create the convo
+              const resp = await fetch('/api/checkOrCreateConversation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userA, userB })
+              });
+              const { conversationID } = await resp.json();             
+
+
+              // Load messages for this conversation
+              loadMessages(conversationID);
+              startPolling(conversationID);
+
+            });
+
+          });
+        }
+
+        renderMyContacts(myContacts);
+
+      })
+      .catch(error => {
+        console.error('Error fetching my contacts:', error);
+        contactsList.innerHTML = '<li style="padding:20px; text-align:center; color:#999;">Failed to load contacts</li>';
+      });
+  });
+
+
+async function loadMessages(conversationID) {
+  if (!conversationID) return;
+
+  const res = await fetch(`http://localhost:3000/messages?conversationID=${conversationID}`);
+  const messages = await res.json();
+  const container = document.querySelector('.messages');
+  container.innerHTML = '';
+
+  if (messages.length === 0) {
+    const placeholder = document.createElement('div');
+    placeholder.classList.add('placeholder');
+    placeholder.innerHTML = `
+      <p>No messages yet. Start the conversation!</p>
+    `;
+    container.appendChild(placeholder);
+  } else {
+    messages.forEach(msg => {
+      const div = document.createElement('div');
+      div.classList.add('message', msg.SenderID == localStorage.getItem('userID') ? 'sent' : 'received');
+      div.innerHTML = `
+        <img src="https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Image-Transparent.png" class="avatar">
+        <div class="content">
+          <p>${msg.Content ?? 'No content'}</p>
+          <span class="timestamp">${new Date(msg.CreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  localStorage.setItem("conversationID", conversationID);
+  container.scrollTop = container.scrollHeight;
+}
+
+let messagePollingInterval;
+
+function startPolling(conversationID) {
+  clearInterval(messagePollingInterval); // Clear any existing interval
+  messagePollingInterval = setInterval(() => {
+    loadMessages(conversationID);
+  }, 1000); // every 3 seconds
+}
+
+const messageInput = document.getElementById('messageInput');
+
+messageInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    sendMessage();
+  }
+});
+
+
+async function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const content = input.value.trim();
+  if (!content) return;
+
+  const senderID = localStorage.getItem('userID'); 
+  const conversationID = localStorage.getItem('conversationID');
+
+  const res = await fetch('http://localhost:3000/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senderID, content, conversationID })
+  });
+
+  const msg = await res.json();
+
+  const container = document.querySelector('.messages');
+  const div = document.createElement('div');
+  div.classList.add('message', 'sent');
+  div.innerHTML = `
+    <img src="https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Image-Transparent.png" class="avatar">
+    <div class="content">
+      <p>${msg.Content}</p>
+      <span class="timestamp">${new Date(msg.CreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+    </div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  input.value = '';
+}
+
+    
+</script>
+</body>
+</html>

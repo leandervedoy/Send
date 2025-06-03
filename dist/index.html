@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Navbar placeholder -->
+    <div id="navbar-container"></div>
+  
+    <!-- Page content -->
+    <section class="hero">
+      <div class="hero-container">
+        <div class="column-left">
+          <h1>Send Unlimited Messages</h1>
+          <p>
+            No contracts or unwanted fees. Exclusive offer for new customers
+            only.
+          </p>
+          <button  href="#" id="message-link">Get Started</button>
+        </div>
+        <div class="column-right">
+          <img
+            src="./imgs/image-1.svg"
+            alt="Illustration showing messaging"
+            class="hero-image"
+          />
+        </div>
+      </div>
+    </section>
+
+    <script>
+     fetch('/Components/navbar.html')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('navbar-container').innerHTML = html;
+
+      // Attach navbar-specific functionality after it's loaded
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+
+      document.getElementById('message-link')?.addEventListener('click', function (e) {
+        if (!token) {
+          e.preventDefault();
+          alert('Please log in to access messages.');
+          window.location.href = '/Pages/login.html';
+        } else {
+          window.location.href = '/Pages/message.html';
+        }
+      });
+
+      document.getElementById('logout-link')?.addEventListener('click', function (e) {
+          e.preventDefault();
+          localStorage.removeItem('authToken');
+          sessionStorage.removeItem('authToken');
+          alert('You have been logged out.');
+          window.location.href = '/index.html';
+        });
+
+        if (!token && document.getElementById('logout-link')) {
+         document.getElementById('logout-link').style.display = 'none';
+        }
+      });
+
+      // Fetch users from the API
+      fetch('http://localhost:3000/api/customers')
+        .then(response => response.json())
+        .then(data => {
+          const userList = document.getElementById('user-list');
+          data.forEach(user => {
+            const li = document.createElement('li');
+            li.textContent = `${user.Name} - ${user.Email}`;
+            userList.appendChild(li);
+          });
+        })
+        .catch(err => console.error('Error fetching data:', err));
+
+       document.getElementById('message-link').addEventListener('click', function (e) {
+        // Simulating a login check: 
+        const token = localStorage.getItem('authToken'); 
+          if (token) {
+            window.location.href = '/Pages/message.html';
+          } else {
+            alert('Please log in to access messages.');
+            window.location.href = '/Pages/login.html'; 
+          }
+       });
+
+      document.getElementById('logout-link').addEventListener('click', function (e) {
+       e.preventDefault();
+
+       // Remove auth token from both localStorage and sessionStorage
+       localStorage.removeItem('authToken');
+       sessionStorage.removeItem('authToken');
+
+       alert('You have been logged out.');
+       window.location.href = '/index.html'; // redirect to login page
+     });
+
+     // Hide logout link if not logged in
+     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+     if (!token) {
+      document.getElementById('logout-link').style.display = 'none';
+     }
+
+
+    </script>
+  </body>
+</html>

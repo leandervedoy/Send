@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - SEND</title>
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #333;
+    }
+
+    /* Form Container */
+    .form-container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      color: #4CAF50;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      color: #555;
+    }
+
+    input[type="text"]:focus, input[type="password"]:focus {
+      border-color: #4CAF50;
+      outline: none;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      width: 100%;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    /* Message Display */
+    #message {
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
+
+    #message.positive {
+      color: #4CAF50;
+    }
+
+    #message.negative {
+      color: #f44336;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .form-container {
+        padding: 1.5rem;
+        width: 90%;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Register</h2>
+    <form id="registerForm">
+      <input type="text" id="username" placeholder="Enter username" required />
+      <input type="text" id="email" placeholder="Enter email" required />
+      <input type="password" id="password" placeholder="Enter password" required />
+      <button type="submit">Register</button>
+    </form>
+    <p id="message"></p>
+  </div>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const email = document.getElementById('email').value;
+
+      const res = await fetch('http://localhost:3000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, email })
+      });
+
+      const msg = document.getElementById('message');
+      const result = await res.json();
+      if (res.ok) {
+        msg.textContent = '✅ Registered successfully! You can now login.';
+        msg.classList.remove('negative');
+        msg.classList.add('positive');
+        window.location.href = '/Pages/login.html';
+      } else {
+        msg.textContent = '❌ ' + result.message;
+        msg.classList.remove('positive');
+        msg.classList.add('negative');
+      }
+    });
+  </script>
+</body>
+</html>
