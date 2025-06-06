@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us - SEND</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+   <!-- Navbar -->
+   <div id="navbar-container"></div>
+
+  <div class="messages-container">
+    <div id="contacts-container"></div>
+    <div class="chat-container">
+    <div class="chat-header"></div>
+      <div class="messages">
+        <p style="text-align: center; ">No messages here yet.</p>
+      </div>
+      <div class="chat-input">
+        <input type="text" placeholder="Type a message..." id="messageInput">
+        <button onclick="sendMessage()" class="sendmessage-button">➤</button>
+      </div>
+    </div>
+  </div>
+   
+<script>
+    // Load and insert navbar
+    fetch('/Components/navbar.html')
+      .then(response => response.text())
+        .then(html => {
+          document.getElementById('navbar-container').innerHTML = html;
+
+        
+
+          const logoutLink = document.getElementById('logout-link');
+          if (logoutLink) {
+            logoutLink.addEventListener('click', function (e) {
+              e.preventDefault();
+              localStorage.removeItem('authToken');
+              sessionStorage.removeItem('authToken');
+              alert('You have been logged out.');
+              window.location.href = '/index.html';
+            });
+
+           
+          }
+     });
+
+</script>
+</body>
+</html>

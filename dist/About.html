@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us - SEND</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Navbar -->
+  <div id="navbar-container"></div>
+  
+
+  <!-- Hero Section (Title and Background) -->
+  <section class="hero">
+    <div class="hero-container">
+      <div class="column-left">
+        <h1>About Us</h1>
+        <p>We provide a seamless experience for sending unlimited messages with no hidden costs, exclusive offers for new customers, and reliable customer support.</p>
+      </div>
+      <div class="column-right">
+        <img src="./info.png" alt="illustration" class="info-image" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Mission Statement -->
+  <section class="about-info">
+    <h2>Our Mission</h2>
+    <p>At SEND, we aim to empower businesses and individuals to communicate efficiently, securely, and without limitations. Our platform ensures that your messages reach the right audience every time, with zero interruptions and transparent pricing.</p>
+  </section>
+
+  <!-- Database Results Section -->
+  <section class="data-section">
+    <h2>Our Data</h2>
+    <ul id="data-list"></ul>
+  </section>
+
+  <script>
+    // Load and insert navbar
+      fetch('/Components/navbar.html')
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('navbar-container').innerHTML = html;
+
+          // Run after navbar is loaded
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+
+          const messageLink = document.getElementById('message-link');
+          if (messageLink) {
+            messageLink.addEventListener('click', function (e) {
+              if (!token) {
+                e.preventDefault();
+                alert('Please log in to access messages.');
+                window.location.href = '/login.html';
+              } else {
+                window.location.href = '/message.html';
+              }
+            });
+          }
+
+          const logoutLink = document.getElementById('logout-link');
+          if (logoutLink) {
+            logoutLink.addEventListener('click', function (e) {
+              e.preventDefault();
+              localStorage.removeItem('authToken');
+              sessionStorage.removeItem('authToken');
+              alert('You have been logged out.');
+              window.location.href = '/index.html';
+            });
+
+            if (!token) {
+              logoutLink.style.display = 'none';
+            }
+          }
+        });
+
+    // Fetch data from your API and display it
+    fetch('https://vedoystudio-enfjfwfbchhhdebx.norwayeast-01.azurewebsites.net/items')
+      .then(response => response.json())
+      .then(data => {
+        const list = document.getElementById('data-list');
+        data.forEach(row => {
+          const li = document.createElement('li');
+          li.textContent = JSON.stringify(row); // Customize this for specific fields
+          list.appendChild(li);
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+  </script>
+</body>
+</html>

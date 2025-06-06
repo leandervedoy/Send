@@ -23,13 +23,16 @@
         </div>
         <div class="column-right">
           <img
-            src="./imgs/image-1.svg"
+            src="./image-1.svg"
             alt="Illustration showing messaging"
             class="hero-image"
           />
         </div>
       </div>
     </section>
+    
+    <h1>Users</h1>
+    <ul id="user-list"></ul>
 
     <script>
      fetch('/Components/navbar.html')
@@ -46,7 +49,7 @@
           alert('Please log in to access messages.');
           window.location.href = '/Pages/login.html';
         } else {
-          window.location.href = '/Pages/message.html';
+          window.location.href = '/message.html';
         }
       });
 
@@ -80,7 +83,7 @@
         // Simulating a login check: 
         const token = localStorage.getItem('authToken'); 
           if (token) {
-            window.location.href = '/Pages/message.html';
+            window.location.href = '/message.html';
           } else {
             alert('Please log in to access messages.');
             window.location.href = '/Pages/login.html'; 

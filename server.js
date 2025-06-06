@@ -194,6 +194,7 @@ app.post('/messages', async (req, res) => {
   }
 });
 
+
 app.get('/api/customers', async (req, res) => {
   try {
     const pool = await sql.connect(dbConfig);

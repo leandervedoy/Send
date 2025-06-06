@@ -9,43 +9,31 @@
 <body>
    <!-- Navbar -->
    <div id="navbar-container"></div>
-
+   
   <div class="messages-container">
-    <div id="contacts-container"></div>
-    <div class="chat-container">
+  <div id="contacts-container"></div>
+  <div class="chat-container">
     <div class="chat-header"></div>
-      <div class="messages">
-        <p style="text-align: center; ">No messages here yet.</p>
-      </div>
-      <div class="chat-input">
+    <div class="messages">
+      <p style="text-align: center; ">No messages here yet.</p>
+    </div>
+    <div class="chat-input">
         <input type="text" placeholder="Type a message..." id="messageInput">
         <button onclick="sendMessage()" class="sendmessage-button">➤</button>
-      </div>
     </div>
-  </div>
-   
+</div>
+</div>
+
+
 <script>
+  
     // Load and insert navbar
     fetch('/Components/navbar.html')
       .then(response => response.text())
         .then(html => {
           document.getElementById('navbar-container').innerHTML = html;
 
-          // Run after navbar is loaded
-          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-
-          const messageLink = document.getElementById('message-link');
-          if (messageLink) {
-            messageLink.addEventListener('click', function (e) {
-              if (!token) {
-                e.preventDefault();
-                alert('Please log in to access messages.');
-                window.location.href = '/login.html';
-              } else {
-                window.location.href = '/message.html';
-              }
-            });
-          }
+        
 
           const logoutLink = document.getElementById('logout-link');
           if (logoutLink) {
@@ -66,8 +54,8 @@
 
   // Load and insert contacts component
   fetch('/Components/Contacts.html')
-  .then(res => res.text())
-  .then(html => {
+   .then(res => res.text())
+    .then(html => {
     document.getElementById('contacts-container').innerHTML = html;
     
     const addBtn = document.getElementById('addContactBtn');
@@ -87,9 +75,9 @@
        window.location.href = '/Pages/login.html';
     }
 
-    // Fetch contacts
+  // Fetch contacts
   fetch(`http://localhost:3000/api/MyContacts?userID=${userID}`)
-      .then(res => res.json())
+    .then(res => res.json())
       .then(myContacts => {
         function renderMyContacts(list) {
           contactsList.innerHTML = '';
@@ -157,6 +145,11 @@
   });
 
 
+
+
+
+
+    
 </script>
 </body>
 </html>

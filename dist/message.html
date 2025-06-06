@@ -25,8 +25,8 @@
   </div>
    
 <script>
-    // Load and insert navbar
-    fetch('/Components/navbar.html')
+   // Load and insert navbar
+   fetch('/Components/navbar.html')
       .then(response => response.text())
         .then(html => {
           document.getElementById('navbar-container').innerHTML = html;
@@ -156,6 +156,93 @@
       });
   });
 
+
+async function loadMessages(conversationID) {
+  if (!conversationID) return;
+
+  const res = await fetch(`http://localhost:3000/messages?conversationID=${conversationID}`);
+  const messages = await res.json();
+  const container = document.querySelector('.messages');
+  container.innerHTML = '';
+
+  if (messages.length === 0) {
+    const placeholder = document.createElement('div');
+    placeholder.classList.add('placeholder');
+    placeholder.innerHTML = `
+      <p>No messages yet. Start the conversation!</p>
+    `;
+    container.appendChild(placeholder);
+  } else {
+    messages.forEach(msg => {
+      const div = document.createElement('div');
+      div.classList.add('message', msg.SenderID == localStorage.getItem('userID') ? 'sent' : 'received');
+      div.innerHTML = `
+        <img src="https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Image-Transparent.png" class="avatar">
+        <div class="content">
+          <p>${msg.Content ?? 'No content'}</p>
+          <span class="timestamp">${new Date(msg.CreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  localStorage.setItem("conversationID", conversationID);
+  container.scrollTop = container.scrollHeight;
+}
+
+  let messagePollingInterval;
+
+  function startPolling(conversationID) {
+    clearInterval(messagePollingInterval);
+
+    messagePollingInterval = setInterval(() => {
+      loadMessages(conversationID);
+    }, 1000);
+  }
+
+  const messageInput = document.getElementById('messageInput');
+
+  messageInput.addEventListener('keydown', (event) => {
+    if(event.key == "Enter"){
+      event.preventDefault();
+      sendMessage();
+    }
+  })
+
+
+
+async function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const content = input.value.trim();
+  if (!content) return;
+
+  const senderID = localStorage.getItem('userID'); 
+  const conversationID = localStorage.getItem('conversationID');
+
+  const res = await fetch('http://localhost:3000/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senderID, content, conversationID })
+  });
+
+  const msg = await res.json();
+
+  const container = document.querySelector('.messages');
+  const div = document.createElement('div');
+  div.classList.add('message', 'sent');
+  div.innerHTML = `
+    <img src="https://www.pngarts.com/files/5/Cartoon-Avatar-PNG-Image-Transparent.png" class="avatar">
+    <div class="content">
+      <p>${msg.Content}</p>
+      <span class="timestamp">${new Date(msg.CreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+    </div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  input.value = '';
+}
+  
 
 </script>
 </body>
